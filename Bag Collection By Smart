@@ -1,1 +1,17 @@
+app/
+assets/
+components/
+constants/
+hooks/
+lib/
+scripts/
+tests/
+app.config.ts
+eas.json
+package.json
+pnpm-lock.yaml
+global.css
+tailwind.config.js
+theme.config.js
+tsconfig.json
 

@@ -3,14 +3,22 @@ name: Build Android APK
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build release APK
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
-      - name: Checkout source
+      - name: Checkout source code
         uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -23,28 +31,32 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+          cache: gradle
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Enable pnpm
-        run: corepack enable
-
-      - name: Install dependencies
+      - name: Install project dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Generate Android project
-        run: npx expo prebuild --platform android --non-interactive
+      - name: Check Expo project
+        run: npx expo config --type public
+
+      - name: Generate Android native project
+        run: npx expo prebuild --platform android --non-interactive --no-install
+
+      - name: Make Gradle executable
+        working-directory: android
+        run: chmod +x gradlew
 
       - name: Build release APK
         working-directory: android
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleRelease
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: bag-collection-by-smart-apk
           path: android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
+          retention-days: 14
